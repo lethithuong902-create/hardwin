@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Hardwin Business OS — dashboard năng suất, khách hàng, chi phí và trợ lý AI cho doanh nghiệp.">
+  <title>Hardwin Business OS</title>
+  <link rel="stylesheet" href="business.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">HARD<span>WIN</span></a>
+      <div class="workspace">
+        <span class="workspace-label">WORKSPACE</span>
+        <strong>Doanh nghiệp Demo</strong>
+        <small>MVP Business OS</small>
+      </div>
+      <nav class="side-nav">
+        <a class="active" href="#overview">◈ Tổng quan</a>
+        <a href="#customers">◎ Khách hàng</a>
+        <a href="#finance">↗ Tài chính</a>
+        <a href="#productivity">◌ Năng suất</a>
+        <a href="#materials">✦ Tài liệu & nội dung</a>
+        <a href="#assistant">✣ AI Assistant</a>
+      </nav>
+      <div class="side-bottom">
+        <div class="status"><span></span> AI routing: ready</div>
+        <a href="index.html">← Hardwin Home</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">HARDWIN BUSINESS OS / MVP 1</p>
+          <h1>Bảng điều hành doanh nghiệp</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="refreshBtn">↻ Làm mới dữ liệu</button>
+          <button class="primary-button" id="exportBtn">Xuất báo cáo</button>
+        </div>
+      </header>
+
+      <section id="overview" class="kpi-grid">
+        <article class="kpi-card"><span>Doanh thu tháng</span><strong id="revenue">₫420M</strong><small class="up">↑ 12.8% so với tháng trước</small></article>
+        <article class="kpi-card"><span>Lead tiềm năng</span><strong id="hotLeads">34</strong><small class="up">↑ 8 lead trong 7 ngày</small></article>
+        <article class="kpi-card"><span>Tỷ lệ chuyển đổi</span><strong id="conversion">8.6%</strong><small>41 / 476 khách quan tâm</small></article>
+        <article class="kpi-card"><span>Chi phí vận hành</span><strong id="cost">₫126M</strong><small class="down">↓ 6.2% sau tối ưu</small></article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel large" id="finance">
+          <div class="panel-head"><div><span class="panel-kicker">PERFORMANCE</span><h2>Doanh thu & chi phí</h2></div><select id="periodSelect"><option>30 ngày</option><option>90 ngày</option><option>12 tháng</option></select></div>
+          <div class="chart-wrap">
+            <div class="chart-bars" id="chartBars"></div>
+            <div class="chart-labels"><span>T1</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span></div>
+          </div>
+        </article>
+
+        <article class="panel" id="productivity">
+          <div class="panel-head"><div><span class="panel-kicker">PRODUCTIVITY</span><h2>Năng suất</h2></div></div>
+          <div class="score"><strong>78</strong><span>/100</span></div>
+          <div class="meter"><i style="width:78%"></i></div>
+          <div class="mini-stats">
+            <div><span>Việc hoàn thành</span><b>86%</b></div>
+            <div><span>Đúng hạn</span><b>81%</b></div>
+            <div><span>Thời gian lãng phí</span><b>11%</b></div>
+          </div>
+        </article>
+
+        <article class="panel" id="customers">
+          <div class="panel-head"><div><span class="panel-kicker">CRM</span><h2>Khách hàng tiềm năng</h2></div><button class="small-button" id="sortLeadBtn">Xếp theo điểm</button></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Khách hàng</th><th>Nguồn</th><th>Nhu cầu</th><th>Điểm</th><th>Trạng thái</th></tr></thead>
+            <tbody id="leadTable"></tbody></table>
+          </div>
+        </article>
+
+        <article class="panel" id="materials">
+          <div class="panel-head"><div><span class="panel-kicker">NEXT ACTIONS</span><h2>AI phát hiện cơ hội</h2></div></div>
+          <div class="insight-list" id="insightList"></div>
+        </article>
+      </section>
+
+      <section id="assistant" class="assistant-section">
+        <div class="assistant-intro">
+          <span class="panel-kicker">HARDWIN AI</span>
+          <h2>Trợ lý doanh nghiệp</h2>
+          <p>Hỏi về khách hàng, chi phí, hiệu suất hoặc ý tưởng tăng trưởng. MVP này dùng dữ liệu minh họa; kết nối dữ liệu thật sẽ là bước tiếp theo.</p>
+          <div class="routing-card"><span class="routing-dot"></span><div><strong>AI Router</strong><small>OpenRouter / Groq / Ollama có thể thay thế lẫn nhau.</small></div></div>
+        </div>
+        <div class="chat-card">
+          <div class="chat-messages" id="chatMessages">
+            <div class="bubble bot">Xin chào. Tôi là Hardwin AI. Hãy thử hỏi: “Khoản chi nào cần xem lại?”, “Khách hàng nào nên gọi trước?” hoặc “Cho tôi 3 ý tưởng tăng doanh thu.”</div>
+          </div>
+          <form class="chat-input" id="chatForm">
+            <input id="chatInput" autocomplete="off" placeholder="Hỏi Hardwin AI về doanh nghiệp..." required>
+            <button class="primary-button" type="submit">Gửi ↗</button>
+          </form>
+          <small class="chat-note">Không đặt API key trong trình duyệt. API được gọi từ server.</small>
+        </div>
+      </section>
+
+      <footer class="footer"><span>Hardwin Business OS MVP</span><span id="updatedAt"></span></footer>
+    </main>
+  </div>
+  <script src="business.js"></script>
+</body>
+</html>
