@@ -1,0 +1,12 @@
+{
+  "name": "hardwin",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Hardwin Business OS — multimedia ecosystem and AI-powered business tools.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
