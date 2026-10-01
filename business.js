@@ -42,7 +42,45 @@ document.getElementById("exportBtn")?.addEventListener("click",()=>{
 const chatMessages=document.getElementById("chatMessages");
 const chatForm=document.getElementById("chatForm");
 const chatInput=document.getElementById("chatInput");
-const chatHistory=[];
+
+const CHAT_STORAGE_KEY="hardwin_chat_history_v1";
+const MAX_STORED_MESSAGES=40;
+
+function loadChatHistory(){
+  try{
+    const raw=localStorage.getItem(CHAT_STORAGE_KEY);
+    if(!raw) return [];
+    const parsed=JSON.parse(raw);
+    if(!Array.isArray(parsed)) return [];
+    return parsed.filter(m=>
+      m &&
+      (m.role==="user" || m.role==="assistant") &&
+      typeof m.content==="string"
+    ).slice(-MAX_STORED_MESSAGES);
+  }catch(err){
+    console.warn("Không thể đọc lịch sử chat:",err);
+    return [];
+  }
+}
+
+function saveChatHistory(){
+  try{
+    localStorage.setItem(
+      CHAT_STORAGE_KEY,
+      JSON.stringify(chatHistory.slice(-MAX_STORED_MESSAGES))
+    );
+  }catch(err){
+    console.warn("Không thể lưu lịch sử chat:",err);
+  }
+}
+
+function clearChatHistory(){
+  chatHistory.length=0;
+  localStorage.removeItem(CHAT_STORAGE_KEY);
+  chatMessages.innerHTML='<div class="bubble bot">Lịch sử trò chuyện đã được xóa. Hãy bắt đầu một cuộc trò chuyện mới.</div>';
+}
+
+const chatHistory=loadChatHistory();
 
 function setCloudAiStatus(message){
   const el=document.getElementById("cloudAiStatusText");
@@ -55,6 +93,15 @@ function addMessage(text,role){
   chatMessages.appendChild(el);
   chatMessages.scrollTop=chatMessages.scrollHeight;
 }
+function renderStoredChatHistory(){
+  if(!chatMessages) return;
+  const welcome='<div class="bubble bot">Xin chào. Tôi là Hardwin AI. Hãy thử hỏi: “Khoản chi nào cần xem lại?”, “Khách hàng nào nên gọi trước?” hoặc “Cho tôi 3 ý tưởng tăng doanh thu.”</div>';
+  chatMessages.innerHTML=welcome;
+  if(!chatHistory.length) return;
+  chatHistory.forEach(m=>addMessage(m.content,m.role==="assistant"?"bot":"user"));
+}
+renderStoredChatHistory();
+
 function localAnswer(q){
   const s=q.toLowerCase();
   if(s.includes("chi")||s.includes("cost")) return "MVP đang cho thấy chi phí vận hành mẫu là ₫126M. Bước tiếp theo là nhập dữ liệu chi phí thật, nhóm theo mục đích và tính tỷ lệ chi phí trên doanh thu để tìm khoản cần tối ưu.";
@@ -74,6 +121,7 @@ chatForm?.addEventListener("submit",async(e)=>{
   pending.textContent="Đang kết nối AI cloud…";
   chatMessages.appendChild(pending);
   chatHistory.push({role:"user",content:q});
+  saveChatHistory();
   try{
     const res=await fetch("/api/chat",{
       method:"POST",
@@ -89,7 +137,11 @@ chatForm?.addEventListener("submit",async(e)=>{
     setCloudAiStatus("Chưa kết nối được AI cloud: "+err.message+" — đang dùng câu trả lời dự phòng.");
   }
   chatHistory.push({role:"assistant",content:pending.textContent});
+  saveChatHistory();
   chatMessages.scrollTop=chatMessages.scrollHeight;
 });
 
 document.getElementById("updatedAt").textContent="Cloud AI • MVP dữ liệu minh họa";
+
+document.getElementById("clearChatBtn")?.addEventListener("click",clearChatHistory);
+window.hardwinChat={clear:clearChatHistory,load:loadChatHistory,save:saveChatHistory};
