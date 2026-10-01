@@ -1,3 +1,5 @@
+const PROVIDER_ORDER = ["openrouter", "groq", "gemini"];
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -5,49 +7,81 @@ export default async function handler(req, res) {
 
   try {
     const body = req.body || {};
-    const messages = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
+    const messages = Array.isArray(body.messages) ? body.messages.slice(-20) : [];
     if (!messages.length) {
       return res.status(400).json({ error: "messages is required" });
     }
 
     const safeMessages = messages.map((m) => ({
       role: m.role === "assistant" ? "assistant" : "user",
-      content: String(m.content || "").slice(0, 6000)
+      content: String(m.content || "").slice(0, 5000)
     }));
 
-    const context = JSON.stringify(body.context || {}).slice(0, 12000);
+    const context = JSON.stringify(body.context || {}).slice(0, 10000);
 
     const system = {
       role: "system",
       content: [
         "Bạn là Hardwin AI, trợ lý vận hành cho doanh nghiệp nhỏ và vừa.",
         "Mục tiêu: giúp doanh nghiệp hiểu khách hàng, doanh thu, chi phí, năng suất và tìm thử nghiệm tạo giá trị.",
-        "Ưu tiên câu trả lời ngắn, có số liệu khi dữ liệu có sẵn, nêu giả định khi thiếu dữ liệu.",
-        "Không tự nhận đã thực hiện giao dịch, gửi email, gọi khách, thay đổi dữ liệu hoặc chi tiền nếu chưa có công cụ/ủy quyền thật.",
+        "Ưu tiên câu trả lời ngắn, thực tế, có số liệu khi dữ liệu có sẵn; nêu giả định khi thiếu dữ liệu.",
         "Không bịa số liệu. Khi dữ liệu là mẫu, nói rõ đó là dữ liệu mẫu.",
         "Ngữ cảnh workspace hiện tại: " + context
       ].join("\n")
     };
 
-    const provider = (process.env.AI_PROVIDER || "openrouter").toLowerCase();
+    const preferred = (process.env.AI_PROVIDER || "auto").toLowerCase();
+    const order = preferred === "auto"
+      ? PROVIDER_ORDER
+      : [preferred, ...PROVIDER_ORDER.filter(p => p !== preferred)];
 
-    if (provider === "ollama") {
-      const base = process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1";
-      const model = process.env.AI_MODEL || "llama3.2";
-      return await callOpenAICompatible(base, process.env.OLLAMA_API_KEY || "ollama", model, [system, ...safeMessages], res);
+    const errors = [];
+
+    for (const provider of order) {
+      try {
+        if (provider === "openrouter" && process.env.OPENROUTER_API_KEY) {
+          const result = await callOpenAICompatible(
+            "https://openrouter.ai/api/v1",
+            process.env.OPENROUTER_API_KEY,
+            process.env.OPENROUTER_MODEL || "openrouter/free",
+            [system, ...safeMessages],
+            {
+              "HTTP-Referer": process.env.APP_URL || "https://github.com/lethithuong902-create/hardwin",
+              "X-Title": "Hardwin Business OS"
+            }
+          );
+          return res.status(200).json({ reply: result.reply, provider: "openrouter", model: result.model });
+        }
+
+        if (provider === "groq" && process.env.GROQ_API_KEY) {
+          const result = await callOpenAICompatible(
+            "https://api.groq.com/openai/v1",
+            process.env.GROQ_API_KEY,
+            process.env.GROQ_MODEL || "openai/gpt-oss-20b",
+            [system, ...safeMessages]
+          );
+          return res.status(200).json({ reply: result.reply, provider: "groq", model: result.model });
+        }
+
+        if (provider === "gemini" && process.env.GEMINI_API_KEY) {
+          const result = await callGemini(
+            process.env.GEMINI_API_KEY,
+            process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
+            [system, ...safeMessages]
+          );
+          return res.status(200).json({ reply: result.reply, provider: "gemini", model: result.model });
+        }
+
+        errors.push(provider + ": not configured");
+      } catch (error) {
+        errors.push(provider + ": " + error.message);
+      }
     }
 
-    if (provider === "groq") {
-      const base = "https://api.groq.com/openai/v1";
-      const model = process.env.AI_MODEL || "openai/gpt-oss-20b";
-      return await callOpenAICompatible(base, process.env.GROQ_API_KEY, model, [system, ...safeMessages], res);
-    }
-
-    const base = "https://openrouter.ai/api/v1";
-    const model = process.env.AI_MODEL || "openrouter/free";
-    return await callOpenAICompatible(base, process.env.OPENROUTER_API_KEY, model, [system, ...safeMessages], res, {
-      "HTTP-Referer": process.env.APP_URL || "https://github.com/lethithuong902-create/hardwin",
-      "X-Title": "Hardwin Business OS"
+    console.error("All AI providers failed", errors);
+    return res.status(503).json({
+      error: "AI service is temporarily unavailable",
+      providers: errors
     });
   } catch (error) {
     console.error(error);
@@ -55,11 +89,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function callOpenAICompatible(baseUrl, apiKey, model, messages, res, extraHeaders = {}) {
-  if (!apiKey) {
-    return res.status(503).json({ error: "AI provider key is not configured" });
-  }
-
+async function callOpenAICompatible(baseUrl, apiKey, model, messages, extraHeaders = {}) {
   const response = await fetch(baseUrl.replace(/\/$/, "") + "/chat/completions", {
     method: "POST",
     headers: {
@@ -76,11 +106,53 @@ async function callOpenAICompatible(baseUrl, apiKey, model, messages, res, extra
   });
 
   const data = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    console.error("Provider error", response.status, data);
-    return res.status(502).json({ error: "AI provider error" });
+    throw new Error("HTTP " + response.status);
   }
 
-  const reply = data?.choices?.[0]?.message?.content || "Không nhận được phản hồi từ model.";
-  return res.status(200).json({ reply, provider: baseUrl, model });
+  return {
+    reply: data?.choices?.[0]?.message?.content || "Không nhận được phản hồi từ model.",
+    model
+  };
+}
+
+async function callGemini(apiKey, model, messages) {
+  const systemText = messages.find(m => m.role === "system")?.content || "";
+  const contents = messages
+    .filter(m => m.role !== "system")
+    .map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: String(m.content || "") }]
+    }));
+
+  const response = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    encodeURIComponent(model) +
+    ":generateContent?key=" + encodeURIComponent(apiKey),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemText }] },
+        contents,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 700
+        }
+      })
+    }
+  );
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error("HTTP " + response.status);
+  }
+
+  return {
+    reply: data?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim() ||
+      "Không nhận được phản hồi từ model.",
+    model
+  };
 }
