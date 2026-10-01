@@ -88,7 +88,20 @@
           <span class="panel-kicker">HARDWIN AI</span>
           <h2>Trợ lý doanh nghiệp</h2>
           <p>Hỏi về khách hàng, chi phí, hiệu suất hoặc ý tưởng tăng trưởng. MVP này dùng dữ liệu minh họa; kết nối dữ liệu thật sẽ là bước tiếp theo.</p>
-          <div class="routing-card"><span class="routing-dot"></span><div><strong>AI Router</strong><small>OpenRouter / Groq / Ollama có thể thay thế lẫn nhau.</small></div></div>
+          <div class="routing-card" id="localAiStatus">
+    <span class="routing-dot"></span>
+    <div>
+      <strong>Hardwin Local AI</strong>
+      <small id="localAiStatusText">Đang chuẩn bị mô hình chạy ngay trên trình duyệt — không cần API key.</small>
+    </div>
+  </div>
+  <div class="chat-controls">
+    <label for="modelSelect">Mô hình</label>
+    <select id="modelSelect">
+      <option value="SmolLM2-360M-Instruct-q4f16_1-MLC">SmolLM2 360M · nhẹ</option>
+      <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B · mạnh hơn</option>
+    </select>
+  </div>
         </div>
         <div class="chat-card">
           <div class="chat-messages" id="chatMessages">
@@ -98,7 +111,7 @@
             <input id="chatInput" autocomplete="off" placeholder="Hỏi Hardwin AI về doanh nghiệp..." required>
             <button class="primary-button" type="submit">Gửi ↗</button>
           </form>
-          <small class="chat-note">Không đặt API key trong trình duyệt. API được gọi từ server.</small>
+          <small class="chat-note">Chế độ mặc định chạy AI ngay trên máy của bạn qua WebGPU. Lần đầu cần tải mô hình; sau đó trình duyệt có thể dùng bộ nhớ đệm. Nếu WebGPU không khả dụng, Hardwin sẽ dùng câu trả lời dự phòng hiện tại.</small>
         </div>
       </section>
 
