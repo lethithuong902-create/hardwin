@@ -98,8 +98,13 @@ function saveChatHistory(){
 }
 
 function updateUsage(){
+  const usage=loadUsage();
   const users=chatHistory.filter(m=>m.role==="user").length;
-  if(usageStatus) usageStatus.textContent=users+" lượt";
+  const tokens=(usage.input_tokens||0)+(usage.output_tokens||0);
+  const cost=Number(usage.estimated_cost_usd||0);
+  if(usageStatus){
+    usageStatus.textContent=`${users} lượt • ~${tokens.toLocaleString("vi-VN")} token • ${cost.toFixed(4)}`;
+  }
 }
 
 function setCloudAiStatus(message){
@@ -137,6 +142,10 @@ renderStoredChatHistory();
 
 function estimateTokens(text){
   return Math.max(1,Math.ceil(String(text||"").length/4));
+}
+
+function loadUsage(){
+  try{return JSON.parse(localStorage.getItem(CHAT_META_KEY)||"{}");}catch{return {};}
 }
 
 function saveUsage(stat){
@@ -315,3 +324,4 @@ chatForm?.addEventListener("submit",async(e)=>{
 });
 
 document.getElementById("updatedAt").textContent="Cloud AI • MVP dữ liệu minh họa";
+updateUsage();
