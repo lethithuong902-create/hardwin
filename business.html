@@ -97,14 +97,34 @@
   </div>
         </div>
         <div class="chat-card">
-          <div class="chat-messages" id="chatMessages">
-            <div class="bubble bot">Xin chào. Tôi là Hardwin AI. Hãy thử hỏi: “Khoản chi nào cần xem lại?”, “Khách hàng nào nên gọi trước?” hoặc “Cho tôi 3 ý tưởng tăng doanh thu.”</div>
+          <div class="chat-toolbar">
+            <div>
+              <strong id="conversationTitle">Cuộc trò chuyện mới</strong>
+              <span id="chatProviderStatus">Cloud AI • sẵn sàng</span>
+            </div>
+            <div class="chat-toolbar-actions">
+              <span id="usageStatus">0 lượt</span>
+              <button class="small-button" id="newChatBtn" type="button">＋ Cuộc trò chuyện mới</button>
+            </div>
           </div>
+          <div class="quick-prompts" id="quickPrompts" aria-label="Gợi ý câu hỏi">
+            <button type="button" data-prompt="Khoản chi nào đang đáng lo nhất?">Chi phí nào đáng lo?</button>
+            <button type="button" data-prompt="Khách hàng nào nên gọi trước và vì sao?">Khách nào nên gọi?</button>
+            <button type="button" data-prompt="Doanh nghiệp đang có vấn đề gì nổi bật?">Tìm vấn đề nổi bật</button>
+            <button type="button" data-prompt="Cho tôi 3 cách tăng doanh thu với dữ liệu hiện tại.">3 cách tăng doanh thu</button>
+          </div>
+          <div class="chat-messages" id="chatMessages"></div>
           <form class="chat-input" id="chatForm">
-            <input id="chatInput" autocomplete="off" placeholder="Hỏi Hardwin AI về doanh nghiệp..." required>
-            <button class="primary-button" type="submit">Gửi ↗</button>
+            <textarea id="chatInput" rows="1" maxlength="4000" autocomplete="off" placeholder="Hỏi Hardwin AI về doanh nghiệp..." required></textarea>
+            <div class="chat-send-area">
+              <span id="inputCounter">0/4000</span>
+              <button class="primary-button" id="sendChatBtn" type="submit">Gửi ↗</button>
+            </div>
           </form>
-          <small class="chat-note">Chatbot dùng AI trên cloud. Không tải model về ổ C/D; trình duyệt chỉ gửi câu hỏi lên server Hardwin. API key nằm ở biến môi trường server, không nằm trong mã nguồn.</small>
+          <div class="chat-status-row">
+            <small class="chat-note">Cloud-only: không tải model về máy. Lịch sử hiện lưu trên trình duyệt; bản cloud database sẽ đồng bộ nhiều thiết bị.</small>
+            <button class="text-button" id="clearChatBtn" type="button">Xóa cuộc trò chuyện</button>
+          </div>
         </div>
       </section>
 
