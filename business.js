@@ -1,96 +1,3 @@
-
-// Hardwin Local AI — browser-native chatbot.
-// WebLLM runs supported open-source models locally in the browser using WebGPU.
-// No provider API key is required for this mode.
-
-const MODEL_CONFIGS = {
-  "SmolLM2-360M-Instruct-q4f16_1-MLC": {
-    model: "https://huggingface.co/mlc-ai/SmolLM2-360M-Instruct-q4f16_1-MLC",
-    model_id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-    model_lib: "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0_2_84/base/SmolLM2-360M-Instruct-q4f16_1_cs1k-webgpu.wasm",
-    context_window_size: 4096
-  },
-  "Llama-3.2-1B-Instruct-q4f16_1-MLC": {
-    model: "https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    model_id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    model_lib: "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0_2_84/base/Llama-3.2-1B-Instruct-q4f16_1_cs1k-webgpu.wasm",
-    context_window_size: 4096
-  }
-};
-
-const modelSelect = document.getElementById("modelSelect");
-const localAiStatusText = document.getElementById("localAiStatusText");
-let localAiEngine = null;
-let localAiModelId = null;
-let localAiModule = null;
-let localAiLoadingPromise = null;
-
-function setLocalAiStatus(message) {
-  if (localAiStatusText) localAiStatusText.textContent = message;
-}
-
-async function loadLocalAI(modelId = modelSelect?.value || "SmolLM2-360M-Instruct-q4f16_1-MLC") {
-  if (localAiEngine && localAiModelId === modelId) return localAiEngine;
-  if (localAiLoadingPromise) return localAiLoadingPromise;
-
-  if (!navigator.gpu) {
-    throw new Error("WebGPU is not available in this browser.");
-  }
-
-  localAiLoadingPromise = (async () => {
-    setLocalAiStatus("Đang nạp WebLLM và kiểm tra GPU của trình duyệt…");
-    localAiModule = localAiModule || await import("https://esm.run/@mlc-ai/web-llm");
-    const config = MODEL_CONFIGS[modelId];
-
-    setLocalAiStatus("Đang tải mô hình lần đầu. Dung lượng phụ thuộc mô hình và bộ nhớ đệm của trình duyệt…");
-    const engine = await localAiModule.CreateMLCEngine(modelId, {
-      appConfig: {
-        cacheBackend: "cache",
-        model_list: [config]
-      },
-      initProgressCallback: (progress) => {
-        if (progress?.text) setLocalAiStatus(progress.text);
-      }
-    });
-
-    localAiEngine = engine;
-    localAiModelId = modelId;
-    setLocalAiStatus("Hardwin Local AI sẵn sàng. Mô hình đang chạy trên thiết bị của bạn.");
-    return engine;
-  })();
-
-  try {
-    return await localAiLoadingPromise;
-  } finally {
-    localAiLoadingPromise = null;
-  }
-}
-
-async function askLocalAI(history, modelId) {
-  const engine = await loadLocalAI(modelId);
-  const result = await engine.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content:
-          "Bạn là Hardwin AI, trợ lý phân tích doanh nghiệp. Trả lời bằng tiếng Việt, ngắn gọn, thực tế. Khi có dữ liệu mẫu của workspace, hãy ưu tiên dùng dữ liệu đó và nói rõ khi thông tin chỉ là dữ liệu minh họa."
-      },
-      ...history
-    ],
-    temperature: 0.4,
-    max_tokens: 500
-  });
-
-  return result?.choices?.[0]?.message?.content?.trim() || "";
-}
-
-modelSelect?.addEventListener("change", async () => {
-  if (localAiModelId === modelSelect.value) return;
-  localAiEngine = null;
-  localAiModelId = null;
-  setLocalAiStatus("Đã chọn mô hình mới. Mô hình sẽ được tải khi bạn gửi câu hỏi.");
-});
-
 const leads=[
 {name:"Minh Phát Media",source:"Website",need:"Quản lý khách hàng",score:94,status:"Nóng"},
 {name:"An Nhiên Shop",source:"Facebook",need:"Tối ưu chi phí",score:87,status:"Nóng"},
@@ -137,8 +44,16 @@ const chatForm=document.getElementById("chatForm");
 const chatInput=document.getElementById("chatInput");
 const chatHistory=[];
 
+function setCloudAiStatus(message){
+  const el=document.getElementById("cloudAiStatusText");
+  if(el) el.textContent=message;
+}
 function addMessage(text,role){
-  const el=document.createElement("div");el.className=`bubble ${role}`;el.textContent=text;chatMessages.appendChild(el);chatMessages.scrollTop=chatMessages.scrollHeight;
+  const el=document.createElement("div");
+  el.className=`bubble ${role}`;
+  el.textContent=text;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
 }
 function localAnswer(q){
   const s=q.toLowerCase();
@@ -149,25 +64,32 @@ function localAnswer(q){
 }
 
 chatForm?.addEventListener("submit",async(e)=>{
-  e.preventDefault();const q=chatInput.value.trim();if(!q)return;
-  addMessage(q,"user");chatInput.value="";
-  const pending=document.createElement("div");pending.className="bubble bot";pending.textContent="Đang phân tích…";chatMessages.appendChild(pending);
+  e.preventDefault();
+  const q=chatInput.value.trim();
+  if(!q) return;
+  addMessage(q,"user");
+  chatInput.value="";
+  const pending=document.createElement("div");
+  pending.className="bubble bot";
+  pending.textContent="Đang kết nối AI cloud…";
+  chatMessages.appendChild(pending);
+  chatHistory.push({role:"user",content:q});
   try{
-    chatHistory.push({role:"user",content:q});
-    let reply = "";
-    try {
-      reply = await askLocalAI(chatHistory, modelSelect?.value);
-    } catch(localErr) {
-      setLocalAiStatus("AI cục bộ chưa chạy được: " + localErr.message + " — đang chuyển sang API dự phòng.");
-      const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:chatHistory,context:{workspace:"demo-business",leads}})});
-      if(!res.ok) throw new Error("API unavailable");
-      const data=await res.json();
-      reply=data.reply||"";
-    }
-    pending.textContent=reply||localAnswer(q);
-    chatHistory.push({role:"assistant",content:pending.textContent});
-  }catch(err){pending.textContent=localAnswer(q);}
+    const res=await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages:chatHistory,context:{workspace:"demo-business",leads}})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||"Cloud AI unavailable");
+    pending.textContent=data.reply||localAnswer(q);
+    setCloudAiStatus("Cloud AI đang hoạt động. Máy bạn không cần tải mô hình.");
+  }catch(err){
+    pending.textContent=localAnswer(q);
+    setCloudAiStatus("Chưa kết nối được AI cloud: "+err.message+" — đang dùng câu trả lời dự phòng.");
+  }
+  chatHistory.push({role:"assistant",content:pending.textContent});
   chatMessages.scrollTop=chatMessages.scrollHeight;
 });
 
-document.getElementById("updatedAt").textContent="MVP dữ liệu minh họa";
+document.getElementById("updatedAt").textContent="Cloud AI • MVP dữ liệu minh họa";
