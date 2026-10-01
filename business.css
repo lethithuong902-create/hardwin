@@ -3,20 +3,3 @@
 @media(max-width:1050px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.content-grid,.assistant-section{grid-template-columns:1fr}.sidebar{display:none}.app-shell{display:block}.main{padding:24px 18px}}
 @media(max-width:600px){.topbar{display:block}.top-actions{margin-top:16px}.kpi-grid{grid-template-columns:1fr}.main{padding:20px 12px}.topbar h1{font-size:29px}.kpi-card strong{font-size:26px}.business-note{flex-direction:column}}
 
-.chat-controls{
-  margin-top:14px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:12px;
-  color:#6b7280;
-}
-.chat-controls select{
-  flex:1;
-  min-width:0;
-  border:1px solid #dfe3e8;
-  background:#fff;
-  color:#1f2937;
-  border-radius:10px;
-  padding:9px 10px;
-}
