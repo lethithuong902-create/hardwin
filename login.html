@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Đăng nhập Hardwin Business OS">
+  <title>Hardwin — Đăng nhập</title>
+  <link rel="stylesheet" href="business.css">
+  <style>
+    body{min-height:100vh;display:grid;place-items:center;background:var(--bg)}
+    .auth-wrap{width:min(460px,calc(100% - 32px))}
+    .auth-card{border:1px solid var(--line);border-radius:22px;background:var(--panel);padding:28px;box-shadow:0 18px 60px rgba(0,0,0,.18)}
+    .auth-card h1{font-size:36px;line-height:1.05;margin:10px 0}
+    .auth-card p{color:var(--muted)}
+    .auth-form{margin-top:22px;display:grid;gap:12px}
+    .auth-form label{font-size:12px;color:var(--muted)}
+    .auth-form input{width:100%;box-sizing:border-box;padding:13px;border-radius:11px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+    .divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--muted);font-size:12px}
+    .divider:before,.divider:after{content:"";height:1px;background:var(--line);flex:1}
+    .auth-actions{display:grid;gap:10px}
+    .google{width:100%;justify-content:center}
+    .mode{margin-top:12px;width:100%;background:transparent;border:0;color:var(--muted);cursor:pointer}
+    .status{margin-top:14px;min-height:18px;font-size:13px}
+    .back{display:inline-block;margin-bottom:16px;color:var(--muted);text-decoration:none}
+  </style>
+</head>
+<body>
+  <main class="auth-wrap">
+    <a class="back" href="index.html">← Hardwin</a>
+    <section class="auth-card">
+      <a class="brand" href="index.html">HARD<span>WIN</span></a>
+      <p class="eyebrow">BUSINESS OS</p>
+      <h1 id="title">Đăng nhập</h1>
+      <p id="subtitle">Bắt đầu với Google. Sau khi đăng nhập, Hardwin sẽ đưa bạn tới nơi tạo hoặc chọn workspace.</p>
+
+      <div class="auth-actions">
+        <button class="primary-button google" id="googleBtn" type="button">Đăng nhập bằng Google ↗</button>
+      </div>
+
+      <div class="divider">hoặc email</div>
+
+      <form class="auth-form" id="authForm">
+        <div>
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+        </div>
+        <div>
+          <label for="password">Mật khẩu</label>
+          <input id="password" type="password" minlength="6" autocomplete="current-password" required placeholder="Ít nhất 6 ký tự">
+        </div>
+        <button class="ghost-button" id="emailBtn" type="submit">Đăng nhập bằng email</button>
+      </form>
+
+      <button class="mode" id="modeBtn" type="button">Chưa có tài khoản? Tạo tài khoản</button>
+      <div class="status" id="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="supabase-client.js"></script>
+  <script>
+    const googleBtn=document.getElementById("googleBtn");
+    const authForm=document.getElementById("authForm");
+    const emailBtn=document.getElementById("emailBtn");
+    const modeBtn=document.getElementById("modeBtn");
+    const title=document.getElementById("title");
+    const subtitle=document.getElementById("subtitle");
+    const status=document.getElementById("status");
+    let signUpMode=false;
+
+    function setStatus(message){status.textContent=message||"";}
+
+    async function goNext(){
+      const session=await window.hardwinAuth.getSession();
+      if(session) window.location.assign("onboarding.html");
+    }
+
+    window.hardwinSupabaseReady.then(goNext).catch(err=>setStatus(err.message));
+
+    googleBtn.addEventListener("click",async()=>{
+      setStatus("Đang mở Google…");
+      googleBtn.disabled=true;
+      try{
+        const supabase=await window.hardwinSupabaseReady;
+        const {error}=await supabase.auth.signInWithOAuth({
+          provider:"google",
+          options:{redirectTo:window.location.origin+"/login.html"}
+        });
+        if(error) throw error;
+      }catch(err){
+        setStatus(err.message||"Không thể đăng nhập Google.");
+        googleBtn.disabled=false;
+      }
+    });
+
+    authForm.addEventListener("submit",async(event)=>{
+      event.preventDefault();
+      setStatus("Đang xử lý…");
+      emailBtn.disabled=true;
+      try{
+        const supabase=await window.hardwinSupabaseReady;
+        const email=document.getElementById("email").value.trim();
+        const password=document.getElementById("password").value;
+        if(signUpMode){
+          const {data,error}=await supabase.auth.signUp({
+            email,password,
+            options:{emailRedirectTo:window.location.origin+"/login.html"}
+          });
+          if(error) throw error;
+          if(data.session){
+            window.location.assign("onboarding.html");
+          }else{
+            setStatus("Tài khoản đã tạo. Kiểm tra email để xác nhận rồi quay lại đăng nhập.");
+          }
+        }else{
+          const {error}=await supabase.auth.signInWithPassword({email,password});
+          if(error) throw error;
+          window.location.assign("onboarding.html");
+        }
+      }catch(err){
+        setStatus(err.message||"Không thể đăng nhập.");
+      }finally{
+        emailBtn.disabled=false;
+      }
+    });
+
+    modeBtn.addEventListener("click",()=>{
+      signUpMode=!signUpMode;
+      title.textContent=signUpMode?"Tạo tài khoản":"Đăng nhập";
+      subtitle.textContent=signUpMode
+        ?"Tạo tài khoản trước. Nếu Hardwin yêu cầu xác nhận email, hãy mở email rồi quay lại."
+        :"Bắt đầu với Google. Sau khi đăng nhập, Hardwin sẽ đưa bạn tới nơi tạo hoặc chọn workspace.";
+      emailBtn.textContent=signUpMode?"Tạo tài khoản bằng email":"Đăng nhập bằng email";
+      modeBtn.textContent=signUpMode?"Đã có tài khoản? Đăng nhập":"Chưa có tài khoản? Tạo tài khoản";
+    });
+  </script>
+</body>
+</html>
