@@ -13,8 +13,8 @@
       <a class="brand" href="index.html">HARD<span>WIN</span></a>
       <div class="workspace">
         <span class="workspace-label">WORKSPACE</span>
-        <strong>Doanh nghiệp Demo</strong>
-        <small>MVP Business OS</small>
+        <select id="workspaceSelect" aria-label="Chọn workspace"></select>
+        <small id="workspaceMeta">Đang tải…</small>
       </div>
       <nav class="side-nav">
         <a class="active" href="#overview">◈ Tổng quan</a>
@@ -40,6 +40,7 @@
         <div class="top-actions">
           <button class="ghost-button" id="refreshBtn">↻ Làm mới dữ liệu</button><a class="ghost-button" href="growth.html">Tìm khách hàng</a><a class="ghost-button" href="onboarding.html">Bắt đầu thiết lập</a>
           <button class="primary-button" id="exportBtn">Xuất báo cáo</button>
+          <button class="ghost-button" id="signOutBtn" type="button">Đăng xuất</button>
         </div>
       </header>
 
@@ -93,7 +94,7 @@
         <div class="assistant-intro">
           <span class="panel-kicker">HARDWIN AI</span>
           <h2>Trợ lý doanh nghiệp</h2>
-          <p>Hỏi về khách hàng, chi phí, hiệu suất hoặc ý tưởng tăng trưởng. MVP này dùng dữ liệu minh họa; kết nối dữ liệu thật sẽ là bước tiếp theo.</p>
+          <p id="dataModeText">Hỏi về khách hàng, chi phí, hiệu suất hoặc ý tưởng tăng trưởng.</p>
           <div class="routing-card" id="cloudAiStatus">
             <span class="routing-dot"></span>
             <div>
@@ -128,7 +129,7 @@
             </div>
           </form>
           <div class="chat-status-row">
-            <small class="chat-note">Cloud-only: không tải model về máy. Lịch sử hiện lưu trên trình duyệt; bản cloud database sẽ đồng bộ nhiều thiết bị.</small>
+            <small class="chat-note">Cloud-only: không tải model về máy. Dữ liệu doanh nghiệp được lọc theo workspace.</small>
             <button class="text-button" id="clearChatBtn" type="button">Xóa cuộc trò chuyện</button>
           </div>
         </div>
@@ -137,6 +138,7 @@
       <footer class="footer"><span>Hardwin Business OS MVP</span><span id="updatedAt"></span></footer>
     </main>
   </div>
+  <script src="supabase-client.js"></script>
   <script src="business.js"></script>
 </body>
 </html>
