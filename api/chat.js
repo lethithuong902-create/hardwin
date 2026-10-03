@@ -36,6 +36,23 @@ function sse(res, payload) {
 }
 
 export default async function handler(req, res) {
+  if (req.method === "GET") {
+    const configured = PROVIDER_ORDER.filter(provider => {
+      if (provider === "gemini") return Boolean(process.env.GEMINI_API_KEY);
+      if (provider === "groq") return Boolean(process.env.GROQ_API_KEY);
+      if (provider === "openrouter") return Boolean(process.env.OPENROUTER_API_KEY);
+      return false;
+    });
+
+    return res.status(200).json({
+      ok: true,
+      configured_providers: configured,
+      message: configured.length
+        ? "Hardwin AI đã có ít nhất một nguồn AI."
+        : "Hardwin AI chưa có khóa API trên máy chủ. Hãy cấu hình GEMINI_API_KEY, GROQ_API_KEY hoặc OPENROUTER_API_KEY trong Vercel."
+    });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error:"Method not allowed" });
   }
@@ -168,7 +185,11 @@ export default async function handler(req, res) {
       }catch(error){errors.push(provider+": "+error.message);}
     }
 
-    return res.status(503).json({error:"Tất cả nguồn AI miễn phí hiện không khả dụng.",providers:errors});
+    return res.status(503).json({
+      error:"Hardwin AI chưa được kết nối tới nguồn AI nào.",
+      providers:errors,
+      setup:"Cấu hình ít nhất một trong các biến GEMINI_API_KEY, GROQ_API_KEY hoặc OPENROUTER_API_KEY trên Vercel rồi triển khai lại."
+    });
   }catch(error){
     console.error(error);
     return res.status(500).json({error:"AI service failed"});
