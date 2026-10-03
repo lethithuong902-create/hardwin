@@ -1,14 +1,170 @@
 <!doctype html>
 <html lang="vi">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hardwin — Thiết lập doanh nghiệp</title><link rel="stylesheet" href="business.css"><style>.onboard{max-width:760px;margin:60px auto;padding:24px}.step{display:none;border:1px solid var(--line);padding:24px;border-radius:16px;background:rgba(255,255,255,.03)}.step.active{display:block}.step h1{font-size:34px}.step label{display:block;color:var(--muted);font-size:12px;margin:15px 0 6px}.step input,.step select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}.steps{display:flex;gap:7px;margin:18px 0}.steps span{height:5px;flex:1;border-radius:99px;background:rgba(255,255,255,.08)}.steps span.active{background:var(--accent)}.actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px}</style></head>
-<body><main class="onboard"><a class="brand" href="business.html">HARD<span>WIN</span></a><div class="steps"><span class="active"></span><span></span><span></span></div>
-<section class="step active"><p class="panel-kicker">01 / BẮT ĐẦU</p><h1>Thiết lập workspace</h1><p>Phiên bản này là onboarding MVP và lưu tạm trên trình duyệt. Auth + database cloud sẽ được nối ở bước tiếp theo.</p><label>Tên doanh nghiệp</label><input id="company" placeholder="Ví dụ: Hardwin Media"><label>Loại tài khoản</label><select id="accountType"><option>Cá nhân</option><option>Doanh nghiệp</option></select><div class="actions"><a class="ghost-button" href="business.html">Bỏ qua</a><button class="primary-button" data-next>Tiếp theo →</button></div></section>
-<section class="step"><p class="panel-kicker">02 / MỤC TIÊU</p><h1>Bạn muốn Hardwin giúp gì?</h1><label>Mục tiêu chính</label><select id="goal"><option>Tăng doanh thu</option><option>Giảm chi phí</option><option>Quản lý khách hàng</option><option>Tăng năng suất</option></select><div class="actions"><button class="ghost-button" data-prev>← Quay lại</button><button class="primary-button" data-next>Tiếp theo →</button></div></section>
-<section class="step"><p class="panel-kicker">03 / HOÀN TẤT</p><h1>Sẵn sàng bắt đầu</h1><p id="summary"></p><button class="primary-button" id="finish">Vào Business OS ↗</button></section>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Thiết lập Hardwin workspace">
+  <title>Hardwin — Thiết lập</title>
+  <link rel="stylesheet" href="business.css">
+  <style>
+    body{min-height:100vh;background:var(--bg)}
+    .onboard{max-width:800px;margin:50px auto;padding:24px}
+    .top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:22px}
+    .step{display:none;border:1px solid var(--line);padding:24px;border-radius:18px;background:var(--panel)}
+    .step.active{display:block}.step h1{font-size:34px;line-height:1.05}.step p{color:var(--muted)}
+    .step label{display:block;color:var(--muted);font-size:12px;margin:15px 0 6px}
+    .step input,.step select{width:100%;padding:12px;box-sizing:border-box;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+    .steps{display:flex;gap:7px;margin:18px 0}.steps span{height:5px;flex:1;border-radius:99px;background:rgba(255,255,255,.08)}.steps span.active{background:var(--accent)}
+    .actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px}.actions.end{justify-content:flex-end}
+    .workspace-list{display:grid;gap:10px;margin-top:16px}.workspace-card{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+    .workspace-card small{display:block;color:var(--muted);margin-top:4px}
+    .empty{padding:16px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);margin-top:12px}
+    .error{color:#ff8e8e!important}.success{color:#7be7ae!important}
+    .userbox{font-size:12px;color:var(--muted);text-align:right}
+  </style>
+</head>
+<body>
+<main class="onboard">
+  <div class="top">
+    <a class="brand" href="index.html">HARD<span>WIN</span></a>
+    <div class="userbox" id="userBox">Đang kiểm tra tài khoản…<br><button class="text-button" id="signoutTop" type="button">Đăng xuất</button></div>
+  </div>
+
+  <div class="steps"><span class="active"></span><span></span><span></span></div>
+
+  <section class="step active" data-step="0">
+    <p class="panel-kicker">01 / WORKSPACE</p>
+    <h1>Chọn nơi bạn đang làm việc</h1>
+    <p>Workspace giống như một “phòng làm việc”. Mỗi phòng có dữ liệu riêng.</p>
+    <div id="workspaceList" class="workspace-list"></div>
+    <div class="empty" id="emptyWorkspace" hidden>Bạn chưa có workspace nào. Hãy tạo workspace đầu tiên ở bước dưới.</div>
+
+    <h2 style="margin-top:26px">Tạo workspace mới</h2>
+    <label for="company">Tên workspace / doanh nghiệp</label>
+    <input id="company" placeholder="Ví dụ: Hardwin Media" autocomplete="organization">
+    <label for="accountType">Loại tài khoản</label>
+    <select id="accountType"><option value="business">Doanh nghiệp</option><option value="personal">Cá nhân</option></select>
+
+    <div class="actions">
+      <a class="ghost-button" href="index.html">← Trang chủ</a>
+      <button class="primary-button" id="createWorkspace" type="button">Tạo workspace →</button>
+    </div>
+    <p id="status" aria-live="polite"></p>
+  </section>
+
+  <section class="step" data-step="1">
+    <p class="panel-kicker">02 / THÔNG TIN</p>
+    <h1>Cho Hardwin biết thêm một chút</h1>
+    <p>Thông tin này giúp Hardwin đưa ra gợi ý sát với công việc của bạn.</p>
+    <label for="fullName">Tên của bạn</label>
+    <input id="fullName" placeholder="Ví dụ: Thường" autocomplete="name">
+    <label for="goal">Mục tiêu chính</label>
+    <select id="goal">
+      <option>Tăng doanh thu</option>
+      <option>Giảm chi phí</option>
+      <option>Quản lý khách hàng</option>
+      <option>Tăng năng suất</option>
+    </select>
+    <div class="actions"><button class="ghost-button" id="backStep" type="button">← Quay lại</button><button class="primary-button" id="saveProfile" type="button">Lưu & tiếp tục →</button></div>
+    <p id="profileStatus" aria-live="polite"></p>
+  </section>
+
+  <section class="step" data-step="2">
+    <p class="panel-kicker">03 / HOÀN TẤT</p>
+    <h1>Workspace đã sẵn sàng</h1>
+    <p id="summary"></p>
+    <div class="actions end"><button class="primary-button" id="finish" type="button">Vào Business OS ↗</button></div>
+  </section>
+</main>
+
+<script src="supabase-client.js"></script>
 <script>
-const steps=[...document.querySelectorAll(".step")], bars=[...document.querySelectorAll(".steps span")];let index=0;
-function show(i){index=i;steps.forEach((s,n)=>s.classList.toggle("active",n===i));bars.forEach((b,n)=>b.classList.toggle("active",n<=i));}
-document.querySelectorAll("[data-next]").forEach(b=>b.addEventListener("click",()=>{if(index===0)localStorage.setItem("hardwin_onboarding",JSON.stringify({company:company.value.trim()||"Doanh nghiệp của bạn",type:accountType.value}));if(index===1){const x=JSON.parse(localStorage.getItem("hardwin_onboarding")||"{}");x.goal=goal.value;localStorage.setItem("hardwin_onboarding",JSON.stringify(x));summary.textContent="Workspace: "+x.company+" • "+x.type+" • Mục tiêu: "+x.goal;}show(Math.min(2,index+1));}));
-document.querySelector("[data-prev]").addEventListener("click",()=>show(Math.max(0,index-1)));
-document.getElementById("finish").addEventListener("click",()=>location.href="business.html");
-</script></main></body></html>
+  const steps=[...document.querySelectorAll(".step")], bars=[...document.querySelectorAll(".steps span")];
+  const workspaceList=document.getElementById("workspaceList"), emptyWorkspace=document.getElementById("emptyWorkspace");
+  const status=document.getElementById("status"), profileStatus=document.getElementById("profileStatus");
+  let index=0, currentUser=null, workspaces=[], selectedWorkspace=null;
+
+  function show(i){index=i;steps.forEach((s,n)=>s.classList.toggle("active",n===i));bars.forEach((b,n)=>b.classList.toggle("active",n<=i));}
+  function message(el,text,type=""){el.className=type;el.textContent=text||"";}
+
+  async function load(){
+    try{
+      const supabase=await window.hardwinSupabaseReady;
+      const {data:{session}}=await supabase.auth.getSession();
+      if(!session){window.location.assign("login.html");return;}
+      currentUser=session.user;
+      document.getElementById("userBox").innerHTML=(currentUser.email||"Đã đăng nhập")+"<br><button class='text-button' id='signoutTop' type='button'>Đăng xuất</button>";
+      document.getElementById("signoutTop").addEventListener("click",async()=>{await window.hardwinAuth.signOut();window.hardwinAuth.clearCurrentWorkspaceId();window.location.assign("login.html");});
+      document.getElementById("fullName").value=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||"";
+
+      workspaces=await window.hardwinAuth.listWorkspaces();
+      renderWorkspaces();
+      if(!workspaces.length){show(0);return;}
+      const saved=window.hardwinAuth.getCurrentWorkspaceId();
+      selectedWorkspace=workspaces.find(w=>w.id===saved)||workspaces[0];
+      window.hardwinAuth.setCurrentWorkspaceId(selectedWorkspace.id);
+      show(0);
+    }catch(err){message(status,err.message||"Không thể tải tài khoản.","error");}
+  }
+
+  function renderWorkspaces(){
+    workspaceList.innerHTML="";
+    if(!workspaces.length){emptyWorkspace.hidden=false;return;}
+    emptyWorkspace.hidden=true;
+    workspaces.forEach(w=>{
+      const row=document.createElement("div");row.className="workspace-card";
+      const left=document.createElement("div");
+      left.innerHTML="<strong>"+escapeHtml(w.name)+"</strong><small>"+(w.plan||"free")+" · "+(w.owner_id===currentUser.id?"Chủ sở hữu":"Thành viên")+"</small>";
+      const button=document.createElement("button");button.className="small-button";button.textContent="Vào";
+      button.addEventListener("click",()=>{selectedWorkspace=w;window.hardwinAuth.setCurrentWorkspaceId(w.id);finishWorkspace();});
+      row.append(left,button);workspaceList.appendChild(row);
+    });
+  }
+  function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
+
+  document.getElementById("createWorkspace").addEventListener("click",async()=>{
+    const name=document.getElementById("company").value.trim()||"Workspace của tôi";
+    const accountType=document.getElementById("accountType").value;
+    status.className="";status.textContent="Đang tạo workspace…";
+    try{
+      const supabase=await window.hardwinSupabaseReady;
+      const {data,error}=await supabase.from("workspaces").insert({name,owner_id:currentUser.id,plan:"free",account_type:accountType}).select().single();
+      if(error) throw error;
+      selectedWorkspace=data;
+      window.hardwinAuth.setCurrentWorkspaceId(data.id);
+      workspaces=[...workspaces,data];
+      renderWorkspaces();
+      show(1);
+    }catch(err){message(status,err.message||"Không tạo được workspace.","error");}
+  });
+
+  document.getElementById("backStep").addEventListener("click",()=>show(0));
+  document.getElementById("saveProfile").addEventListener("click",async()=>{
+    profileStatus.textContent="Đang lưu…";
+    try{
+      const supabase=await window.hardwinSupabaseReady;
+      const fullName=document.getElementById("fullName").value.trim();
+      const goal=document.getElementById("goal").value;
+      const {error}=await supabase.from("profiles").upsert({
+        id:currentUser.id,
+        email:currentUser.email,
+        full_name:fullName||null,
+        avatar_url:currentUser.user_metadata?.avatar_url||null,
+        account_type:selectedWorkspace?.account_type==="personal"?"personal":"business"
+      });
+      if(error) throw error;
+      if(selectedWorkspace && (selectedWorkspace.account_type||"business")==="business"){
+        await supabase.from("business_profiles").upsert({workspace_id:selectedWorkspace.id,company_name:selectedWorkspace.name,value_proposition:"Mục tiêu: "+goal});
+      }
+      document.getElementById("summary").textContent="Bạn đang ở: "+selectedWorkspace.name+" · Mục tiêu: "+goal;
+      message(profileStatus,"Đã lưu.","success");
+      show(2);
+    }catch(err){message(profileStatus,err.message||"Không lưu được.","error");}
+  });
+
+  function finishWorkspace(){document.getElementById("fullName").value=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||"";show(1);}
+  document.getElementById("finish").addEventListener("click",()=>location.assign("business.html"));
+  load();
+</script>
+</body>
+</html>
