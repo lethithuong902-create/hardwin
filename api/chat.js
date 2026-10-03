@@ -106,7 +106,7 @@ export default async function handler(req, res) {
             result=await streamGemini(
               res,
               process.env.GEMINI_API_KEY,
-              process.env.GEMINI_MODEL||"gemini-2.5-flash-lite",
+              process.env.GEMINI_MODEL||"gemini-3.5-flash-lite",
               [system,...safeMessages]
             );
           }else if(provider==="groq" && process.env.GROQ_API_KEY){
@@ -158,7 +158,7 @@ export default async function handler(req, res) {
     for(const provider of order){
       try{
         if(provider==="gemini" && process.env.GEMINI_API_KEY){
-          const result=await callGemini(process.env.GEMINI_API_KEY,process.env.GEMINI_MODEL||"gemini-2.5-flash-lite",[system,...safeMessages]);
+          const result=await callGemini(process.env.GEMINI_API_KEY,process.env.GEMINI_MODEL||"gemini-3.5-flash-lite",[system,...safeMessages]);
           return res.status(200).json({
             reply:result.reply,provider,model:result.model,
             usage:{input_tokens:estimateTokens(safeMessages.map(m=>m.content).join("\n")+context),output_tokens:estimateTokens(result.reply),estimated_cost_usd:0}
@@ -256,7 +256,7 @@ async function streamGemini(res,apiKey,model,messages){
     body:JSON.stringify({
       systemInstruction:{parts:[{text:systemText}]},
       contents,
-      generationConfig:{temperature:0.2,maxOutputTokens:700}
+      generationConfig:{maxOutputTokens:700}
     })
   });
 
@@ -316,7 +316,7 @@ async function callGemini(apiKey,model,messages){
       body:JSON.stringify({
         systemInstruction:{parts:[{text:systemText}]},
         contents,
-        generationConfig:{temperature:0.2,maxOutputTokens:700}
+        generationConfig:{maxOutputTokens:700}
       })
     }
   );
